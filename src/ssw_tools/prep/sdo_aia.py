@@ -73,7 +73,7 @@ def degradation_correction(smap, *, correction_table):
     return smap
 
 
-def aia_prep_ml(aia_map, *, pointing_table, correction_table,
+def aia_prep_ml(aia_map, *, pointing_table=None, correction_table=None,
                 resolution=1024, padding_factor=0.1):
     """
     1. Pointing correction
@@ -87,11 +87,13 @@ def aia_prep_ml(aia_map, *, pointing_table, correction_table,
     4. Exposure normalization [DN/s]
     """
     # 1.
-    aia_map = update_pointing(aia_map, pointing_table=pointing_table)
+    if pointing_table is not None:
+        aia_map = update_pointing(aia_map, pointing_table=pointing_table)
     # 2.
     aia_map = register_ml(aia_map, resolution=resolution, padding_factor=padding_factor)
     # 3.
-    aia_map = degradation_correction(aia_map, correction_table=correction_table)
+    if correction_table is not None:
+        aia_map = degradation_correction(aia_map, correction_table=correction_table)
     # 4.
     aia_map /= aia_map.exposure_time
     return aia_map
