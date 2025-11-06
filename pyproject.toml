@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "mgjeon", email = "mgjeon@khu.ac.kr" }
+    { name = "Mingyu Jeon", email = "mgjeon@khu.ac.kr" },
+    { name = "Junmu Youn", email = "jmyoun@khu.ac.kr" }
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -14,6 +15,8 @@ dependencies = [
     "numpy>=2.0",
     "sunpy>=7.0",
     "tqdm>=4.67",
+    "pandas>=2.0",
+    "sunpy_soar>=1.11",
 ]
 
 [build-system]
