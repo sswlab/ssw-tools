@@ -1,199 +1,271 @@
 # ssw-prep
 
-SDO/AIA solar data ML preprocessing pipeline for machine learning applications.
+SDO/AIA solar data preprocessing pipeline for machine learning applications.
 
 ## Description
 
-This skill provides a comprehensive preprocessing pipeline specifically designed to transform raw SDO/AIA Level 1 FITS files into ML-ready formats. It implements standard solar physics calibration procedures and normalization techniques optimized for deep learning applications.
+This skill provides a comprehensive preprocessing pipeline specifically designed to transform raw SDO/AIA Level 1 FITS files into ML-ready Level 2 format. It implements standard solar physics calibration procedures (pointing correction, image registration, degradation correction) and normalization techniques optimized for deep learning applications.
 
 ## When to Use
 
 Use this skill when Claude needs to:
-1. Preprocess AIA Level 1 FITS data for machine learning
-2. Calibrate solar images (pointing, degradation, exposure correction)
-3. Register and normalize solar disk images
-4. Batch convert raw FITS to ML-ready format
-5. Standardize solar observation data for neural network training
+1. Preprocess SDO/AIA Level 1 FITS data for machine learning
+2. Calibrate AIA images (pointing, degradation, exposure correction)
+3. Register and center solar disk images to standard resolution
+4. Convert raw FITS to ML-ready FITS format
+5. Batch process directories of AIA observations
 
 ## Triggers
 
 This skill is automatically invoked when users mention:
 - 'AIA preprocessing'
-- 'solar data prep'
-- 'FITS preprocessing'
+- 'SDO preprocessing'
 - 'aia_prep_ml'
-- 'ML-ready solar data'
+- 'ML-ready AIA data'
 - 'calibrate AIA'
 - 'solar image registration'
 - '태양 데이터 전처리'
 - 'AIA 보정'
-- 'ML 전처리'
+
+## Core Function: `aia_prep_ml()`
+
+```python
+from ssw_tools.prep.sdo_aia import aia_prep_ml
+from sunpy.map import Map
+from astropy.table import QTable
+
+# Load AIA map
+aia_map = Map('aia_lev1_171a_2023_01_01t00_00_00.fits')
+
+# Load calibration tables
+pointing_table = QTable.read('pointing_table.ecsv', format='ascii.ecsv')
+correction_table = QTable.read('correction_table.ecsv', format='ascii.ecsv')
+
+# Preprocess
+aia_map_prep = aia_prep_ml(
+    aia_map,
+    pointing_table=pointing_table,
+    correction_table=correction_table,
+    resolution=1024,
+    padding_factor=0.1
+)
+
+# Save preprocessed map
+aia_map_prep.save('aia_lev2_171a_2023_01_01t00_00_00.fits')
+```
 
 ## Preprocessing Steps
 
-### 1. Level 1 to Level 1.5 Calibration
-- **Pointing correction**: Align images to solar disk center
-- **Degradation correction**: Compensate for instrument sensitivity changes over time
-- **Exposure normalization**: Standardize exposure times across observations
-- **Despiking**: Remove cosmic ray artifacts and bad pixels
+The `aia_prep_ml()` function performs these steps in order:
+
+### 1. Pointing Correction (Optional)
+- Updates spacecraft pointing information using calibration table
+- Corrects for spacecraft jitter and pointing errors
+- Uses `aiapy.calibrate.update_pointing()`
 
 ### 2. Image Registration
-- **Solar disk detection**: Locate and center the solar disk
-- **Rotation compensation**: Account for solar rotation
-- **Limb darkening**: Optional correction for intensity falloff at solar limb
-- **Coordinate system**: Transform to helioprojective coordinates
+Implemented in `register_ml()`:
+- **NaN handling**: Replace NaN values with 0
+- **Negative clipping**: Set negative values to 0
+- **Data type**: Convert to float32 for efficiency
+- **Solar rotation**: Rotate so solar north is up
+- **Centering**: Align solar center with image center
+- **Scaling**: Resize so `resolution/2 = (1 + padding_factor) × R_sun`
+- **Cropping**: Extract centered `resolution × resolution` region
+- **Padding**: Add padding if image is smaller than target resolution
 
-### 3. Normalization for ML
-- **Intensity scaling**: Map to [0, 1] or [-1, 1] range
-- **Logarithmic transformation**: Handle wide dynamic range (optional)
-- **Standardization**: Zero mean, unit variance per wavelength channel
-- **Clipping**: Remove extreme outliers
+### 3. Degradation Correction (Optional)
+- Compensates for instrument sensitivity degradation over time
+- Uses wavelength-specific correction factors
+- Implemented in `degradation_correction()`
+- Adds `deg_corr` metadata field
 
-### 4. Output Formatting
-- **Data format**: NumPy arrays (.npy) or PyTorch tensors (.pt)
-- **Metadata preservation**: Store observation time, wavelength, coordinates
-- **Efficient storage**: Compressed formats for large datasets
+### 4. Exposure Normalization
+- Normalizes by exposure time to get DN/s units
+- Ensures consistent brightness across different exposures
 
-## Usage Examples
+## Parameters
 
-### Basic preprocessing
 ```python
-from ssw_tools.prep import aia_prep_ml
-
-# Preprocess single FITS file
 aia_prep_ml(
-    input_file='aia_20230101_000000_171.fits',
-    output_file='processed/aia_171_000.npy',
-    normalize=True,
-    clip_percentile=99.5
+    aia_map,                    # Input SunPy Map object
+    pointing_table=None,        # Pointing calibration table (optional)
+    correction_table=None,      # Degradation correction table (optional)
+    resolution=1024,            # Output image size (pixels)
+    padding_factor=0.1          # Padding around solar disk (fraction of R_sun)
 )
 ```
 
-### Batch preprocessing
+- `aia_map`: SunPy Map object loaded from Level 1 FITS file
+- `pointing_table`: QTable from `pointing_table.ecsv` (optional but recommended)
+- `correction_table`: QTable from `correction_table.ecsv` (optional but recommended)
+- `resolution`: Output image dimensions (default: 1024×1024)
+- `padding_factor`: Extra space around disk as fraction of solar radius (default: 0.1)
+
+## Utility Functions
+
+### `nan_to_num_clip()`
 ```python
-import glob
-from ssw_tools.prep import batch_prep_ml
-
-# Process all FITS files in directory
-fits_files = glob.glob('raw_data/*.fits')
-batch_prep_ml(
-    input_files=fits_files,
-    output_dir='ml_ready/',
-    normalize=True,
-    log_scale=True,
-    n_jobs=4  # Parallel processing
-)
+nan_to_num_clip(data, nan=0, a_min=0, a_max=None)
 ```
+Replaces NaN values and clips data to valid range.
 
-### Multi-wavelength preprocessing
+### `register_ml()`
 ```python
-from ssw_tools.prep import prep_multi_wavelength
-
-# Create aligned multi-channel images
-wavelengths = [94, 131, 171, 193, 211, 304]
-prep_multi_wavelength(
-    base_dir='raw_data/',
-    wavelengths=wavelengths,
-    output_dir='ml_ready/multi_channel/',
-    timestamp='2023-01-01T12:00:00',
-    output_format='numpy'  # or 'torch'
-)
+register_ml(smap, resolution=2048, padding_factor=0.2)
 ```
+Registers and normalizes solar disk to standard format.
 
-### Custom preprocessing pipeline
+### `degradation_correction()`
 ```python
-from ssw_tools.prep import PreprocessingPipeline
+degradation_correction(smap, correction_table=correction_table)
+```
+Applies instrument degradation correction.
 
-pipeline = PreprocessingPipeline(
-    steps=[
-        'calibrate',
-        'register',
-        'normalize',
-        'resize'  # Optional: resize to 512x512
-    ],
-    normalize_method='minmax',  # or 'standardize'
-    target_size=(512, 512),
-    clip_percentile=99.0
-)
+## Batch Processing Script
 
-processed = pipeline.process('input.fits')
-pipeline.save(processed, 'output.npy')
+The module includes a command-line script for batch processing:
+
+```bash
+python -m ssw_tools.prep.sdo_aia \
+    --path_raw F:/data/raw/sdo/aia \
+    --path_prep F:/data/prep/sdo/aia \
+    --resolution 1024 \
+    --padding_factor 0.1
 ```
 
-## Configuration Options
+**Script behavior:**
+1. Searches for all `*.fits` files in `path_raw` recursively
+2. Loads pointing and correction tables from `path_prep`
+3. Processes each file with `aia_prep_ml()`
+4. Saves to same relative path under `path_prep`
+5. Skips files that already exist in output directory
+6. Logs progress to `path_prep/aia_prep.log`
+7. Continues processing even if individual files fail
 
-### Normalization Methods
-- **minmax**: Scale to [0, 1] range
-- **standardize**: Zero mean, unit variance
-- **log_minmax**: Logarithmic then min-max
-- **robust**: Use median and IQR for outlier resistance
+## Command-Line Arguments
 
-### Output Formats
-- **numpy** (.npy): NumPy array format
-- **torch** (.pt): PyTorch tensor format
-- **zarr**: Compressed chunked array format for large datasets
-- **hdf5**: HDF5 format with metadata
+- `--path_raw`: Input directory containing raw Level 1 FITS files
+- `--path_prep`: Output directory for preprocessed FITS files
+- `--resolution`: Output image resolution (default: 1024)
+- `--padding_factor`: Padding around solar disk (default: 0.1)
 
-### Quality Control
-- **Bad pixel detection**: Identify and interpolate bad pixels
-- **Saturation handling**: Flag and handle saturated regions
-- **Exposure filtering**: Remove under/over-exposed images
-- **Coverage check**: Ensure full disk coverage
+## Output Format
 
-## Output Structure
+### Preprocessed FITS Files
+Output files have:
+- **Resolution**: Square images of specified size (e.g., 1024×1024)
+- **Data type**: float32 (BITPIX=-32)
+- **Units**: DN/s (exposure normalized)
+- **Coordinate system**: Heliographic with solar center at image center
+- **Level**: LVL_NUM=2.0 in header
 
-Preprocessed files include:
+### Updated Metadata
+Key FITS header updates:
 ```
-output_dir/
-├── images/
-│   ├── 20230101_000000_171.npy
-│   ├── 20230101_000500_171.npy
-│   └── ...
-├── metadata/
-│   ├── 20230101_000000_171.json
-│   └── ...
-└── preprocessing_log.txt
+BITPIX = -32          # 32-bit floating point
+LVL_NUM = 2.0         # Processing level
+R_SUN = <pixels>      # Solar radius in pixels
+CRPIX1 = resolution/2 + 0.5  # Center X
+CRPIX2 = resolution/2 + 0.5  # Center Y
+CRVAL1 = 0            # Solar center X
+CRVAL2 = 0            # Solar center Y
+PC1_1 = 1, PC1_2 = 0  # Rotation matrix
+PC2_1 = 0, PC2_2 = 1
+CROTA = 0             # No rotation
+deg_corr = <value>    # Degradation correction factor
 ```
 
-Metadata JSON contains:
-```json
-{
-    "original_file": "aia_20230101_000000_171.fits",
-    "wavelength": 171,
-    "observation_time": "2023-01-01T00:00:00",
-    "normalization": "minmax",
-    "clip_percentile": 99.5,
-    "shape": [512, 512],
-    "preprocessing_timestamp": "2023-01-15T10:30:00"
-}
-```
+## Required Calibration Files
+
+Place in `path_prep` before running batch processing:
+
+1. **pointing_table.ecsv**: Pointing correction table
+   - Generated using `aiapy.calibrate.fetch_spikes` or similar
+
+2. **correction_table.ecsv**: Degradation correction table
+   - Generated using `aiapy.calibrate.degradation` lookup tables
 
 ## Dependencies
 
-- `sunpy`: Solar physics library with AIA prep routines
-- `aiapy`: Specialized AIA preprocessing functions
-- `astropy`: FITS file handling and coordinates
-- `scikit-image`: Image processing utilities
-- `numpy`: Array operations
-- `torch` or `tensorflow`: Optional for direct tensor output
+- **sunpy**: Solar physics library (Map class, FITS I/O)
+- **aiapy**: AIA-specific calibration routines
+  - `aiapy.calibrate.update_pointing`
+  - `aiapy.calibrate.degradation`
+- **astropy**: FITS handling, coordinate transforms, units
+- **numpy**: Array operations
+- **loguru**: Logging (batch processing)
+- **tqdm**: Progress bars (batch processing)
+- **pathlib**: Path manipulation
+
+## Example Workflow
+
+### Single File Processing
+```python
+from sunpy.map import Map
+from astropy.table import QTable
+from ssw_tools.prep.sdo_aia import aia_prep_ml
+
+# Load calibration tables (download once, reuse)
+pointing_table = QTable.read('pointing_table.ecsv', format='ascii.ecsv')
+correction_table = QTable.read('correction_table.ecsv', format='ascii.ecsv')
+
+# Process single observation
+aia_map = Map('aia_lev1_171a_2023_01_01t00_00_00.fits')
+aia_prep = aia_prep_ml(
+    aia_map,
+    pointing_table=pointing_table,
+    correction_table=correction_table,
+    resolution=512,
+    padding_factor=0.15
+)
+
+# Access processed data
+print(aia_prep.data.shape)  # (512, 512)
+print(aia_prep.data.dtype)  # float32
+aia_prep.save('output.fits')
+```
+
+### Batch Processing
+```bash
+# Prepare directory structure
+mkdir -p /data/prep/sdo/aia
+
+# Download calibration tables (one-time setup)
+# (Use aiapy utilities or pre-downloaded tables)
+
+# Run batch preprocessing
+python -m ssw_tools.prep.sdo_aia \
+    --path_raw /data/raw/sdo/aia \
+    --path_prep /data/prep/sdo/aia \
+    --resolution 1024 \
+    --padding_factor 0.1
+```
 
 ## Performance Considerations
 
-- **Parallel processing**: Use `n_jobs` parameter for batch processing
-- **Memory usage**: ~500 MB per 4K×4K image
-- **Processing time**: ~2-5 seconds per image (CPU), ~0.5s (GPU)
-- **Storage**: Compressed numpy arrays are ~10-20 MB per image
+- **Processing time**: ~2-5 seconds per image (CPU)
+- **Memory usage**: ~500 MB per 4K×4K input image
+- **Output size**: ~4 MB per 1024×1024 float32 image
+- **Parallelization**: Script processes files sequentially (can be parallelized externally)
 
-## Quality Assurance
+## References
 
-The pipeline includes automatic checks for:
-- Image quality metrics (contrast, sharpness)
-- Calibration success verification
-- Alignment accuracy assessment
-- Outlier detection in intensity distributions
+Based on methodology from:
+- **InstrumentToInstrument**: https://github.com/RobertJaro/InstrumentToInstrument/
+- Standard SDO/AIA Level 1.5 processing procedures
+- AIA Instrument Guide and calibration papers
+
+## Notes
+
+- Pointing and degradation corrections are optional but strongly recommended for ML applications
+- The `padding_factor` controls how much context around the solar disk is included
+- Lower resolution (e.g., 512) is faster and sufficient for many ML tasks
+- The script preserves directory structure from `path_raw` to `path_prep`
+- Failed files are logged but don't stop batch processing
 
 ## Related Skills
 
-- **ssw-download**: Download raw FITS files for preprocessing
-- **ssw-viz**: Visualize before/after preprocessing comparison
-- **ssw-ml**: Use preprocessed data for ML model training
+- **ssw-download**: Download raw SDO/AIA FITS files (note: current download module supports STEREO/SolO only)
+- **ssw-viz**: (Planned) Visualize before/after preprocessing comparison
+- **ssw-ml**: (Planned) Use preprocessed data for ML model training

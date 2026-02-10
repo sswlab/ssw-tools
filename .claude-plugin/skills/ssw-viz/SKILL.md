@@ -1,14 +1,20 @@
 # ssw-viz
 
-Solar observation data visualization for EUV imagery, ML results, and analysis.
+Solar observation data visualization for EUV imagery and analysis (PLANNED).
 
 ## Description
 
-This skill provides comprehensive visualization capabilities for solar observation data, preprocessing results, and machine learning model outputs. It offers specialized plotting functions designed for solar physics data with proper color maps, coordinate systems, and physical units.
+This skill is planned to provide comprehensive visualization capabilities for solar observation data, preprocessing results, and machine learning model outputs. It will offer specialized plotting functions designed for solar physics data with proper color maps, coordinate systems, and physical units.
+
+## Status
+
+⚠️ **NOT YET IMPLEMENTED** ⚠️
+
+This skill is currently in the planning phase. The functionality described below represents the intended capabilities, not current implementation.
 
 ## When to Use
 
-Use this skill when Claude needs to:
+This skill will be used when Claude needs to:
 1. Display solar EUV images from FITS files
 2. Create multi-wavelength comparison panels
 3. Make before/after preprocessing comparisons
@@ -18,55 +24,86 @@ Use this skill when Claude needs to:
 
 ## Triggers
 
-This skill is automatically invoked when users mention:
+This skill will be automatically invoked when users mention:
 - 'solar visualization'
 - 'solar image display'
 - 'FITS visualization'
 - 'EUV image plot'
 - 'multi-wavelength comparison'
 - 'solar animation'
-- 'sun image'
 - '태양 이미지 시각화'
 - '태양 시각화'
-- 'solar plot'
 
-## Visualization Types
+## Planned Features
 
-### 1. Single Image Display
-Display individual solar EUV observations with proper color mapping and annotations.
+### 1. Basic Image Display
+- Single FITS file visualization
+- Automatic wavelength-specific colormaps
+- Coordinate grid overlay
+- Solar limb marking
+- Colorbar with proper units
 
 ### 2. Multi-Wavelength Panels
-Create side-by-side or grid comparisons of different wavelength observations.
+- Side-by-side comparisons
+- Grid layouts for multiple wavelengths
+- Synchronized colorbars
+- Time-matched observations
 
-### 3. Time Series Visualization
-Show temporal evolution of solar features through image sequences or animations.
+### 3. Preprocessing Comparison
+- Before/after preprocessing views
+- Difference images
+- Split-view comparisons
+- Quality metrics overlay
 
-### 4. Preprocessing Comparison
-Before/after views of preprocessing steps (calibration, normalization, registration).
+### 4. Time Series and Animations
+- Image sequences as video/GIF
+- Running difference movies
+- Feature tracking visualization
+- Customizable frame rate and resolution
 
-### 5. ML Prediction Overlay
-Visualize model predictions (segmentation masks, detection boxes) overlaid on input images.
+### 5. Analysis Plots
+- Intensity histograms
+- Radial profiles from disk center
+- Light curves at selected regions
+- Power spectra
 
-### 6. Quantitative Analysis Plots
-- Intensity distributions and histograms
-- Radial profiles
-- Light curves
-- Feature tracking
+### 6. ML Visualization
+- Segmentation mask overlays
+- Detection bounding boxes
+- Attention/activation maps
+- Prediction confidence heatmaps
 
-## Usage Examples
+## Planned Standard Color Maps
 
-### Display Single FITS Image
+### AIA Wavelengths
+- **171Å**: Gold/yellow (quiet corona)
+- **193Å**: Bronze (hot active regions)
+- **211Å**: Pink (active regions)
+- **304Å**: Red (chromosphere)
+
+### STEREO/EUVI Wavelengths
+- **171Å**: Similar to AIA 171
+- **195Å**: Similar to AIA 193
+- **284Å**: Green tones
+- **304Å**: Red (chromosphere)
+
+### Solar Orbiter/EUI
+- **174Å**: Similar to AIA 171
+- **304Å**: Red (chromosphere)
+
+## Planned API Examples
+
+### Single Image Display
 ```python
 from ssw_tools.viz import plot_solar_image
 
-# Load and display AIA 171Å image
 plot_solar_image(
-    'aia_20230101_000000_171.fits',
-    cmap='sdoaia171',  # Standard AIA color map
+    'aia_lev2_171a_2023_01_01t00_00_00.fits',
+    cmap='sdoaia171',
     title='SDO/AIA 171Å',
     colorbar=True,
     grid=True,
-    save='output/aia171.png'
+    save='aia_171.png'
 )
 ```
 
@@ -74,280 +111,115 @@ plot_solar_image(
 ```python
 from ssw_tools.viz import plot_multi_wavelength
 
-wavelengths = [94, 131, 171, 193, 211, 304]
-files = [f'aia_20230101_000000_{wl}.fits' for wl in wavelengths]
+files = [
+    'aia_171.fits',
+    'aia_193.fits',
+    'aia_211.fits',
+    'aia_304.fits'
+]
 
 plot_multi_wavelength(
     files,
-    wavelengths=wavelengths,
-    layout=(2, 3),  # 2 rows, 3 columns
-    figsize=(15, 10),
-    share_colorbar=False,  # Individual colorbars
-    save='output/multi_wavelength.png'
+    wavelengths=[171, 193, 211, 304],
+    layout=(2, 2),
+    figsize=(12, 12),
+    save='multi_wavelength.png'
 )
 ```
 
-### Before/After Preprocessing
+### Preprocessing Comparison
 ```python
 from ssw_tools.viz import plot_preprocessing_comparison
 
 plot_preprocessing_comparison(
-    before='raw/aia_171_raw.fits',
-    after='processed/aia_171_processed.npy',
-    titles=['Raw Level 1', 'Preprocessed ML-ready'],
-    cmap='sdoaia171',
-    save='output/preprocessing_comparison.png'
+    before='aia_lev1_171.fits',
+    after='aia_lev2_171.fits',
+    titles=['Raw Level 1', 'Preprocessed Level 2'],
+    save='preprocessing_comparison.png'
 )
 ```
 
-### ML Segmentation Overlay
-```python
-from ssw_tools.viz import plot_segmentation_overlay
-
-# Display coronal hole detection results
-plot_segmentation_overlay(
-    image='aia_193.npy',
-    mask='predictions/ch_mask.npy',
-    overlay_alpha=0.4,
-    mask_color='cyan',
-    cmap='sdoaia193',
-    title='Coronal Hole Detection (193Å)',
-    save='output/ch_detection.png'
-)
-```
-
-### Active Region Detection Boxes
-```python
-from ssw_tools.viz import plot_detection_boxes
-
-# Visualize AR detection results
-plot_detection_boxes(
-    image='magnetogram.fits',
-    boxes=detection_results['boxes'],
-    labels=detection_results['labels'],
-    scores=detection_results['scores'],
-    threshold=0.5,  # Confidence threshold
-    cmap='hmimag',  # Magnetogram color map
-    save='output/ar_detection.png'
-)
-```
-
-### Time-Lapse Animation
+### Animation
 ```python
 from ssw_tools.viz import create_animation
 
-# Create movie from image sequence
 create_animation(
     image_files=sorted(glob.glob('timeseries/*.fits')),
-    output='animations/solar_evolution.mp4',
+    output='solar_evolution.mp4',
     fps=10,
-    cmap='sdoaia171',
-    title_template='SDO/AIA 171Å - {timestamp}',
-    colorbar=True,
-    dpi=150
+    cmap='sdoaia171'
 )
 ```
 
-### Intensity Distribution
-```python
-from ssw_tools.viz import plot_intensity_histogram
+## Planned Dependencies
 
-# Analyze intensity distribution
-plot_intensity_histogram(
-    'aia_171.fits',
-    bins=100,
-    log_scale=True,  # Logarithmic intensity scale
-    show_stats=True,  # Display mean, median, std
-    save='output/intensity_dist.png'
-)
-```
+- matplotlib: Core plotting
+- sunpy: Solar-specific visualization utilities
+- astropy: FITS handling and WCS
+- numpy: Array operations
+- scipy: Image processing
+- opencv-python: Video creation (optional)
+- plotly: Interactive visualizations (optional)
 
-### Radial Profile
-```python
-from ssw_tools.viz import plot_radial_profile
+## Implementation Roadmap
 
-# Plot intensity as function of radius from disk center
-plot_radial_profile(
-    'aia_193.fits',
-    center='auto',  # Automatically detect disk center
-    rmax=1.3,  # Extend to 1.3 solar radii
-    nbins=100,
-    title='193Å Radial Intensity Profile',
-    save='output/radial_profile.png'
-)
-```
+1. **Phase 1**: Basic FITS image display with proper colormaps
+2. **Phase 2**: Multi-panel layouts and comparisons
+3. **Phase 3**: Preprocessing visualization tools
+4. **Phase 4**: Animation and time series
+5. **Phase 5**: ML prediction visualization
+6. **Phase 6**: Interactive plotting
 
-### Difference Image
-```python
-from ssw_tools.viz import plot_difference_image
+## Temporary Alternative
 
-# Show temporal changes
-plot_difference_image(
-    image1='aia_t0.fits',
-    image2='aia_t1.fits',
-    method='running',  # or 'base'
-    cmap='RdBu_r',  # Diverging colormap
-    symmetric=True,  # Center colorbar at zero
-    title='Running Difference (ΔT = 5 min)',
-    save='output/difference.png'
-)
-```
-
-## Standard AIA Color Maps
-
-Wavelength-specific color tables:
-- **sdoaia94**: Teal (hot corona)
-- **sdoaia131**: Purple (flare plasma)
-- **sdoaia171**: Gold/yellow (quiet corona)
-- **sdoaia193**: Bronze (hot active regions)
-- **sdoaia211**: Pink (active regions)
-- **sdoaia304**: Red (chromosphere)
-- **sdoaia335**: Blue (active region corona)
-- **sdoaia1600**: Yellow-white (UV continuum)
-- **sdoaia1700**: White (temperature minimum)
-
-Magnetogram:
-- **hmimag**: Gray scale for line-of-sight magnetic field
-
-## Advanced Visualization
-
-### Interactive Plotting
-```python
-from ssw_tools.viz import interactive_viewer
-
-# Launch interactive viewer with zoom, pan, intensity inspection
-viewer = interactive_viewer('aia_171.fits')
-viewer.add_contours(threshold=0.5)
-viewer.add_coordinate_grid()
-viewer.launch()
-```
-
-### Composite RGB Images
-```python
-from ssw_tools.viz import create_rgb_composite
-
-# Create false-color RGB composite
-create_rgb_composite(
-    red='aia_211.fits',    # Hot active regions
-    green='aia_193.fits',  # Coronal loops
-    blue='aia_171.fits',   # Quiet corona
-    output='composite_rgb.png',
-    enhance=True,  # Contrast enhancement
-    align=True     # Align images
-)
-```
-
-### Feature Tracking Visualization
-```python
-from ssw_tools.viz import plot_feature_tracking
-
-# Visualize tracked features over time
-plot_feature_tracking(
-    image_sequence=images,
-    tracks=tracking_results,
-    feature_type='coronal_hole',
-    color_by='id',  # Color by feature ID
-    show_velocity=True,
-    save='output/tracking.png'
-)
-```
-
-### ML Model Attention Maps
-```python
-from ssw_tools.viz import plot_attention_map
-
-# Visualize what ML model focuses on
-plot_attention_map(
-    input_image='aia_171.npy',
-    attention=gradcam_output,
-    overlay_alpha=0.5,
-    cmap_attention='jet',
-    title='Model Attention for Flare Prediction',
-    save='output/attention.png'
-)
-```
-
-## Coordinate Systems
-
-Supports proper solar coordinate transformations:
-- **Helioprojective-Cartesian (HPC)**: Arcseconds from disk center
-- **Heliographic-Stonyhurst (HGS)**: Latitude/longitude on solar surface
-- **Heliographic-Carrington (HGC)**: Rotating coordinate system
+Until this module is implemented, users can use SunPy's built-in visualization:
 
 ```python
-from ssw_tools.viz import plot_with_coordinates
+from sunpy.map import Map
+import matplotlib.pyplot as plt
 
-plot_with_coordinates(
-    'aia_171.fits',
-    coord_system='heliographic',
-    grid_spacing=10,  # 10-degree grid
-    draw_limb=True,
-    draw_equator=True
-)
+# Basic display
+aia_map = Map('aia_lev2_171a.fits')
+fig = plt.figure(figsize=(10, 10))
+aia_map.plot()
+plt.colorbar()
+plt.show()
+
+# Save to file
+aia_map.plot()
+plt.savefig('aia_171.png', dpi=150, bbox_inches='tight')
+plt.close()
 ```
 
-## Export Formats
-
-Supported output formats:
-- **PNG**: High-quality raster (default)
-- **PDF**: Vector format for publications
-- **SVG**: Scalable vector graphics
-- **FITS**: Annotated FITS with overlays
-- **MP4/GIF**: Animations
-
-## Publication-Ready Figures
-
+For multi-wavelength:
 ```python
-from ssw_tools.viz import publication_plot
+import matplotlib.pyplot as plt
+from sunpy.map import Map
 
-# Generate publication-quality figure
-publication_plot(
-    'aia_171.fits',
-    figsize=(8, 8),
-    dpi=300,
-    fontsize=12,
-    title='SDO/AIA 171 Å Observation',
-    timestamp_format='%Y-%m-%d %H:%M:%S UT',
-    colorbar_label='Intensity [DN/s]',
-    save='figures/publication_fig.pdf'
-)
+files = ['aia_171.fits', 'aia_193.fits', 'aia_211.fits']
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+for ax, file in zip(axes, files):
+    smap = Map(file)
+    smap.plot(axes=ax)
+    ax.set_title(f'{smap.wavelength}')
+
+plt.tight_layout()
+plt.savefig('multi_wavelength.png', dpi=150)
+plt.close()
 ```
 
-## Dependencies
+## Contributing
 
-- **matplotlib**: Core plotting library
-- **sunpy**: Solar physics visualization tools
-- **astropy**: FITS file handling and coordinates
-- **numpy**: Array operations
-- **scipy**: Image processing
-- **opencv-python**: Video/animation creation
-- **plotly**: Interactive visualizations (optional)
-
-## Performance Tips
-
-- Use downsampling for quick preview of large images
-- Enable caching for repeated visualizations
-- Use vector formats (PDF/SVG) for small datasets
-- Parallel rendering for batch visualization
-
-## Customization
-
-```python
-from ssw_tools.viz import set_visualization_defaults
-
-# Set global visualization preferences
-set_visualization_defaults(
-    style='publication',  # or 'presentation', 'web'
-    cmap_default='sdoaia171',
-    figsize=(10, 10),
-    dpi=150,
-    colorbar=True,
-    grid=False
-)
-```
+If you're interested in implementing this module, please:
+1. Use SunPy's Map.plot() as foundation
+2. Implement standard solar physics colormaps
+3. Support both preprocessed and raw FITS files
+4. Include coordinate system handling
+5. Provide both scripting API and command-line interface
 
 ## Related Skills
 
 - **ssw-download**: Download data to visualize
 - **ssw-prep**: Preprocess data before visualization
-- **ssw-ml**: Visualize ML model predictions and training results
+- **ssw-ml**: (Planned) Visualize ML predictions
