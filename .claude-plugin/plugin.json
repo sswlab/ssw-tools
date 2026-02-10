@@ -1,0 +1,125 @@
+{
+  "name": "ssw-plugin",
+  "version": "1.0.0",
+  "description": "SolarSoft Workshop (SSW) plugin for Claude Code - Comprehensive toolkit for solar physics data analysis, preprocessing, machine learning, and visualization",
+  "author": "SSW Team",
+  "homepage": "https://github.com/yourusername/ssw-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ssw-plugin.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "solar physics",
+    "astrophysics",
+    "machine learning",
+    "deep learning",
+    "SDO",
+    "AIA",
+    "STEREO",
+    "Solar Orbiter",
+    "FITS",
+    "data visualization",
+    "image processing"
+  ],
+  "skills": [
+    {
+      "name": "ssw-download",
+      "description": "Solar observation data downloader for SDO, STEREO, and Solar Orbiter missions",
+      "path": "skills/ssw-download",
+      "triggers": [
+        "solar data download",
+        "SDO download",
+        "AIA data",
+        "STEREO data",
+        "Solar Orbiter data",
+        "FITS download",
+        "sun observation data",
+        "EUI data",
+        "EUVI data",
+        "태양 데이터 다운로드",
+        "태양 관측 데이터"
+      ]
+    },
+    {
+      "name": "ssw-prep",
+      "description": "SDO/AIA solar data ML preprocessing pipeline",
+      "path": "skills/ssw-prep",
+      "triggers": [
+        "AIA preprocessing",
+        "solar data prep",
+        "FITS preprocessing",
+        "aia_prep_ml",
+        "ML-ready solar data",
+        "calibrate AIA",
+        "solar image registration",
+        "태양 데이터 전처리",
+        "AIA 보정",
+        "ML 전처리"
+      ]
+    },
+    {
+      "name": "ssw-ml",
+      "description": "Machine learning for solar physics using preprocessed SSW data",
+      "path": "skills/ssw-ml",
+      "triggers": [
+        "solar ML",
+        "solar deep learning",
+        "flare prediction",
+        "coronal hole detection",
+        "instrument translation",
+        "solar image segmentation",
+        "FITS dataloader",
+        "solar neural network",
+        "태양 ML",
+        "태양 딥러닝",
+        "플레어 예측",
+        "solar AI"
+      ]
+    },
+    {
+      "name": "ssw-viz",
+      "description": "Solar observation data visualization for EUV imagery, ML results, and analysis",
+      "path": "skills/ssw-viz",
+      "triggers": [
+        "solar visualization",
+        "solar image display",
+        "FITS visualization",
+        "EUV image plot",
+        "multi-wavelength comparison",
+        "solar animation",
+        "sun image",
+        "태양 이미지 시각화",
+        "태양 시각화",
+        "solar plot"
+      ]
+    }
+  ],
+  "requirements": {
+    "python": ">=3.8",
+    "packages": [
+      "sunpy>=5.0.0",
+      "astropy>=5.0",
+      "numpy>=1.21.0",
+      "scipy>=1.7.0",
+      "matplotlib>=3.4.0",
+      "torch>=2.0.0",
+      "torchvision>=0.15.0",
+      "scikit-image>=0.19.0",
+      "scikit-learn>=1.0.0",
+      "aiapy>=0.7.0",
+      "drms>=0.6.0",
+      "opencv-python>=4.5.0",
+      "tqdm>=4.62.0"
+    ]
+  },
+  "engines": {
+    "claude-code": ">=1.0.0"
+  },
+  "categories": [
+    "scientific-computing",
+    "machine-learning",
+    "data-visualization",
+    "astrophysics"
+  ]
+}
